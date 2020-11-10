@@ -18,15 +18,24 @@
 def getClass(ip):
     # splits ip into its 4 segments and picks the first one
     firstSegment = int(ip.split('.')[0])
-    # returns class based on its first segment
-    if(firstSegment < 128):
-        return "Clase A"
-    elif(firstSegment < 192):
-        return "Clase B"
-    elif(firstSegment < 224):
-        return "Clase C"
-    elif (firstSegment < 240):
+    # Converts segment to bits
+    binSeg = bin(int(firstSegment))
+    binSeg = binSeg.split("b")[1]
+    # Fills segment with 0 if conversion is less than 8 bits
+    if (len(binSeg) < 8):
+        temp = ""
+        for i in range(0, 8 - len(binSeg)):
+            temp = temp + "0"
+        binSeg = temp + binSeg
+    # returns class based on its first segment bits
+    if (binSeg[:4] == "1110"):
         return "Clase D"
+    elif (binSeg[:3] == "110"):
+        return "Clase C"
+    elif (binSeg[:2] == "10"):
+        return "Clase B"
+    elif (binSeg[0] == "0"):
+        return "Clase A"
     elif (firstSegment < 256):
         return "Clase E"
     else:
@@ -41,13 +50,13 @@ def getSubnetMask(ip):
     # Initializes variable to store the subnet mask in binary
     binMask = ""
     try:
-        while(count >= 0):
+        while (count >= 0):
             # If there's bits left in the subnet variables it adds a 1 to the binary subnet mask and substract 1 from the subnet variable
-            if(subnet > 0):
+            if (subnet > 0):
                 subnet -= 1
                 binMask = binMask + "1"
                 # adds a dot every 8 bits
-                if(count % 8 == 0):
+                if (count % 8 == 0):
                     binMask = binMask + "."
             # Keeps adding 0s to the subnet mask while subnet = 0 and count >= 0
             else:
@@ -106,8 +115,8 @@ def getHostSegment(ip):
 
     hostSize = len(binNum) - subnet
     hostSegment = (2**hostSize) - 2
-    print("\nHosts/Net:", hostSegment)    
-    return binNum[subnet:len(binNum)] 
+    print("Hosts/Net:", hostSegment)
+    return binNum[subnet:len(binNum)]
 
 
 def getNetworkSegment(ip):
@@ -148,8 +157,8 @@ def getNetworkSegment(ip):
     # hostSize = len(binNum) - subnet
     # hostSegment = (2**hostSize) - 2
     # print("\nNETWORK SEGMENT:", hostSegment)
-    
-    return binNum[:subnet] 
+
+    return binNum[:subnet]
 
 
 def getFirstAddress(ip):
@@ -211,15 +220,15 @@ def getNetworkAddress(ip):
     for segment in ipSegments:
         binSeg = bin(int(segment))
         binSeg = binSeg.split("b")[1]  # Eliminates the 0b prefix
-        if(len(binSeg) < 8):
+        if (len(binSeg) < 8):
             temp = ""
-            for i in range(0, 8-len(binSeg)):
+            for i in range(0, 8 - len(binSeg)):
                 temp = temp + "0"
             binSeg = temp + binSeg
         binIp = binIp + binSeg
     netAddressBinTemp = binIp[:subnet]
-    count = 32-subnet
-    while(count > 0):
+    count = 32 - subnet
+    while (count > 0):
         netAddressBinTemp = netAddressBinTemp + "0"
         count -= 1
     netAddress = str(int(netAddressBinTemp[0:8], 2)) + "." + str(int(netAddressBinTemp[8:16], 2)) + "." + str(
@@ -251,17 +260,40 @@ def getBroadcastAddress(ip):
     return netAddress
 
 
-ipdir = "10.101.99.17/23"  # 179.50.143.247/20
-print("IP:.", ipdir)
+def checkIp(ip):
+    try:
+        ipsegment, subnet = ip.split("/")[0], ip.split("/")[1]
+        if len(ip.split("/")) > 2:
+            return False
+        if (int(subnet) < 1) | (int(subnet) > 32):
+            return False
+        if len(ipsegment.split(".")) != 4:
+            return False
+        for x in ipsegment.split("."):
+            if int(x) > 255:
+                return False
+    except:
+        return False
+    return True
 
-print("\ngetClass:.", getClass(ipdir))
-print("getSubnetMask:.", getSubnetMask(ipdir))
 
-print("getHostSegment:.", getHostSegment(ipdir))
-print("getNetworkSegment:.", getNetworkSegment(ipdir))
-print("getFirstAddress:.", getFirstAddress(ipdir))
-print("getLastAddress:.", getLastAddress(ipdir))
+def calculateIPv4():
+    while True:
+        ip = input(
+            "Ingrese la dirección IPv4 a probar (ej: 192.168.0.1/24 ) o ingrese x para salir: ")
+        if ip == "x":
+            break
+        if checkIp(ip):
+            print("\nClase de la dirección: " + getClass(ip))
+            print("Mascara de Subred: " + getSubnetMask(ip))
+            print("Segmento Red: " + getNetworkSegment(ip))
+            print("Segmento Host: " + getHostSegment(ip))
+            print("Primera Dirección: " + getFirstAddress(ip))
+            print("Ultima Dirección: " + getLastAddress(ip))
+            print("Dirección de Red: " + getNetworkAddress(ip))
+            print("Dirección de Difusión: " + getBroadcastAddress(ip) + "\n")
+        else:
+            print("Dirección IPv4 inválida\n")
 
-print("\ngetNetworkAddress:.", getNetworkAddress(ipdir))
-print("getBroadcastAddress:.", getBroadcastAddress(ipdir))
-# print(getSubnetMask("0.0.0.0/33"))
+
+calculateIPv4()
